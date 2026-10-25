@@ -17,7 +17,7 @@ vm.runInNewContext(fs.readFileSync('public/sw.js', 'utf8'), {
   URL,
   self: { addEventListener: (name, handler) => handlers[name] = handler,
     location: { origin: 'https://example.test' }, clients: { claim: async () => {} } },
-  caches: { open: async () => cache, keys: async () => ['price-profit-v0', 'price-profit-v2', 'other-app'],
+  caches: { open: async () => cache, keys: async () => ['price-profit-v0', 'price-profit-v3', 'other-app'],
     delete: async key => deleted.push(key) },
   fetch: async () => { throw Error('Offline'); }
 });

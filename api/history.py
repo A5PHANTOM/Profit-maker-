@@ -1,7 +1,12 @@
 """Browser history authenticated by a random device-specific bearer secret."""
 import json
 import re
+import sys
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler
+
+# Vercel may load the entrypoint without adding the project root to sys.path.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bot import number, calculate
 from history_store import save, list_history, clear, HistoryUnavailable
 

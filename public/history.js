@@ -22,7 +22,12 @@
       }, ...(data ? { body: JSON.stringify(data) } : {})
     });
     let body;
-    try { body = await response.json(); } catch { throw new Error('History requires the Vercel API. Use a deployed app to save calculations.'); }
+    try { body = await response.json(); } catch {
+      if (response.status >= 500) throw new Error(`History server failed (HTTP ${response.status}). Please retry shortly; the calculator still works.`);
+      if (response.status === 404) throw new Error('History API was not found. Deploy the latest project version.');
+      if (response.status === 401 || response.status === 403) throw new Error('History API access was blocked. Check deployment access settings.');
+      throw new Error('History API returned an unexpected response. Please retry shortly.');
+    }
     if (!response.ok) throw new Error(body.error || 'History unavailable. Try again.');
     return body;
   }
