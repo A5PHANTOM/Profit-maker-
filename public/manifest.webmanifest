@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "Price & Profit",
+  "short_name": "Price & Profit",
+  "description": "Your original price, selling price, and profit. Instantly.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f4ed",
+  "theme_color": "#123b31",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

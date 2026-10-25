@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Price & Profit">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <meta name="theme-color" content="#123b31">
+  <meta name="description" content="Calculate your selling price and profit with a preset or custom markup percentage.">
+  <title>Price & Profit — Markup calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="calculator.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="./"><span class="brand-icon">↗</span> Price & Profit</a><span class="header-note">A little clarity for every sale.</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">THE EVERYDAY MARKUP CALCULATOR</p><h1>Your price. <br>Your profit. <br><span>Made simple.</span></h1><p class="description">Start with your original price, add a percentage, and see exactly what you’ll earn.</p><div class="intro-foot"><span>01 &nbsp; Enter price</span><span>02 &nbsp; Pick markup</span><span>03 &nbsp; See profit</span></div></section>
+    <section class="calculator" aria-label="Price and profit calculator">
+      <form id="calculator" novalidate>
+        <div class="card-heading"><h2>Let’s do the numbers</h2><button type="reset" class="reset">Reset ↺</button></div>
+        <label for="price">Original price <span>Your cost per item</span></label>
+        <div class="price-field"><span aria-hidden="true">↗</span><input id="price" name="price" type="text" inputmode="decimal" placeholder="1,000.00" autocomplete="off" aria-describedby="price-error"><span class="unit">AMOUNT</span></div>
+        <p id="price-error" class="error"></p>
+        <fieldset><legend>Add a percentage</legend><div class="presets">
+          <button type="button" class="preset" data-percent="30" aria-pressed="false">30%</button>
+          <button type="button" class="preset active" data-percent="40" aria-pressed="true">40%</button>
+          <button type="button" class="preset" data-percent="50" aria-pressed="false">50%</button>
+          <button type="button" class="preset" data-percent="custom" aria-pressed="false">Other %</button>
+        </div></fieldset>
+        <div id="custom-field" hidden><label for="percentage">Custom percentage</label><div class="custom-input"><input id="percentage" type="text" inputmode="decimal" placeholder="e.g. 12.5" aria-describedby="percentage-error"><span>%</span></div></div>
+        <p id="percentage-error" class="error"></p>
+        <button type="submit" class="calculate">Calculate my price <span>↗</span></button>
+      </form>
+      <div class="results" aria-live="polite" aria-atomic="true">
+        <div class="result-top"><p>YOUR NEW SELLING PRICE</p><span id="badge">+40% markup</span></div>
+        <output id="total">—</output>
+        <div class="breakdown"><div><span>Original price</span><strong id="original">—</strong></div><div><span>Profit per item <span class="profit-dot">●</span></span><strong id="profit">—</strong></div></div>
+        <p class="result-note" id="result-note">Your next sale, with the numbers figured out.</p>
+      </div>
+      <p class="footnote">Same currency in, same currency out. Profit is the added amount, before fees and taxes.</p>
+    </section>
+  </main>
+  <aside class="install-tip" id="install-tip" hidden><span><strong>Keep it on your iPhone</strong><br>Tap Safari’s Share button, then Add to Home Screen.</span><button type="button" id="dismiss-install" aria-label="Dismiss installation tip">×</button></aside>
+  <p class="app-status" id="app-status" role="status"></p>
+  <footer><span>Small calculations. Better decisions.</span><span>Price + markup = your selling price</span></footer>
+</body>
+</html>
