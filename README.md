@@ -2,20 +2,31 @@
 
 ## Database and history
 
-History uses an Upstash Redis database over HTTPS, compatible with Vercel Functions. Create/connect an Upstash Redis database through Vercel Marketplace or the Upstash console, then add these server-only variables to Vercel and your local `.env`:
+History now uses **Supabase Postgres** when `bearittprofit_POSTGRES_URL` (from your Vercel Supabase integration) or `DATABASE_URL` is set. Credentials are read only by Python server code. No Supabase secret keys are required in the browser.
+
+1. Connect your Supabase integration to this Vercel project and enable its variables for Production.
+2. Install Python dependencies: `python3 -m pip install -r requirements.txt` (prefer a virtual environment).
+3. With the Postgres connection URL in the ignored `.env`, run `python3 scripts/init_db.py` once. It creates only the `profit_private` schema, history table, and index. Public API roles have no access; browser access goes through `/api/history` and its private device key.
+4. Redeploy Vercel. Both Telegram `/history` and the web history panel use this database.
+
+To inspect saved rows in Supabase SQL Editor, use `SELECT record FROM profit_private.calculation_history ORDER BY sequence DESC LIMIT 100;`. Run `python3 scripts/check_db.py` to verify real saves, reads, isolation, deletion, and API-role restrictions using temporary records. This test cleans up its own records.
+
+Amounts are stored as exact decimal strings inside JSONB records. Saves use transactions, per-owner locks, and unique event IDs to prevent duplicate retained records. The latest 100 records per browser/chat are retained. Clearing browser history deletes that browser's rows. See `migrations/001_history.sql` for the schema; it can also be run through Supabase SQL Editor.
+
+The previous Upstash backend is still supported when no Postgres URL is configured. To use it, set:
 
 ```text
 UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your-rest-token
 ```
 
-Use the REST token with write access. Redeploy after adding the variables. No schema migration or packages are required. Database requests use the [Upstash REST API](https://upstash.com/docs/redis/features/restapi).
+For Upstash only, use a REST token with write access; no SQL migration is required. Redeploy after adding variables. Database requests use the [Upstash REST API](https://upstash.com/docs/redis/features/restapi).
 
 The website saves when you tap **Calculate**, or choose a preset after calculating. View **Your history** below the result, **Refresh** it, or **Clear** it. Typing updates the preview; tap Calculate to save that preview. Offline calculations still work; offline entries are not queued or saved. Failed saves display an explicit message. History is not cached by the service worker.
 
 Web history is private to a random browser key stored on your device. There is no account sign-in or cross-device sync: clearing browser data loses access to that history. Safari and the installed app may have separate storage. Treat the browser key as a credential. Telegram history is separate and scoped to the Telegram private chat: send **/history** to see your latest 10 calculations. Both webhook and local polling save to the same Telegram history.
 
-The database retains the latest **100 calculations per browser/chat**, with amounts, percentage and UTC timestamp. Server-side code recalculates submitted values. Repeated delivery of an event is deduplicated for 7 days. The database must be configured for saving to work; calculations remain available when it is not.
+The database retains the latest **100 calculations per browser/chat**, with amounts, percentage and UTC timestamp. Server-side code recalculates submitted values. Postgres deduplicates events while they are retained; Upstash deduplicates them for 7 days. The database must be configured for saving to work; calculations remain available when it is not.
 
 For full local API development use `vercel dev`; the simple static HTTP server can preview the calculator but cannot provide database endpoints. Run `python3 -m unittest -v`, `node test_web.cjs`, and `node test_offline.cjs` for checks.
 

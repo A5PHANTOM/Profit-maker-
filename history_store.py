@@ -1,4 +1,4 @@
-"""Private calculation history in serverless-compatible Upstash Redis."""
+"""Private history in Supabase Postgres, with optional legacy Upstash support."""
 import hashlib
 import json
 import os
@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 from urllib.error import URLError
+import postgres_history
 
 
 class HistoryUnavailable(Exception):
@@ -36,6 +37,8 @@ def key(owner):
 def save(owner, price, percent, total, profit, event_id=None):
     record = {'id': str(event_id or uuid.uuid4()), 'created_at': datetime.now(timezone.utc).isoformat(),
               'original': str(price), 'percentage': str(percent), 'total': str(total), 'profit': str(profit)}
+    if postgres_history.database_url():
+        return postgres_history.save_record(key(owner), record)
     # Atomic retry deduplication and bounded retention: latest 100 calculations.
     script = """if redis.call('SET', KEYS[2], '1', 'NX', 'EX', 604800) then
       redis.call('LPUSH', KEYS[1], ARGV[1]); redis.call('LTRIM', KEYS[1], 0, 99); return 1
@@ -46,10 +49,14 @@ def save(owner, price, percent, total, profit, event_id=None):
 
 
 def list_history(owner):
+    if postgres_history.database_url():
+        return postgres_history.list_records(key(owner))
     return [json.loads(row) for row in command('LRANGE', key(owner), 0, 99) or []]
 
 
 def clear(owner):
+    if postgres_history.database_url():
+        return postgres_history.clear_records(key(owner))
     command('DEL', key(owner))
 
 

@@ -17,8 +17,8 @@ def load_env():
     if path.is_file():
         for line in path.read_text().splitlines():
             key, separator, value = line.partition("=")
-            if separator and key.strip() in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"):
-                os.environ.setdefault(key.strip(), value.strip())
+            if separator and key.strip() in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "DATABASE_URL", "bearittprofit_POSTGRES_URL"):
+                os.environ.setdefault(key.strip(), value.strip().strip('\"\''))
 
 
 KEYBOARD = {"keyboard": [["30%", "40%", "50%"], ["Other %", "New price"]],
