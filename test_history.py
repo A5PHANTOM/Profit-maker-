@@ -16,7 +16,7 @@ class HistoryTests(unittest.TestCase):
         instance.rfile = io.BytesIO(body)
         received = []
         instance.respond = lambda status, data: received.append((status, data))
-        instance.handle_request(method)
+        instance.process_history(method)
         return received[0]
 
     @patch('api.history.save')

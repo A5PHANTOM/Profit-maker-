@@ -19,7 +19,7 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
-    def handle_request(self, method):
+    def process_history(self, method):
         auth = self.headers.get('Authorization', '')
         if not re.fullmatch(r'Bearer [a-f0-9]{64}', auth):
             return self.respond(401, {'error': 'A valid device key is required.'})
@@ -48,10 +48,10 @@ class handler(BaseHTTPRequestHandler):
             return self.respond(400, {'error': 'Enter a valid price and percentage.'})
 
     def do_GET(self):
-        self.handle_request('GET')
+        self.process_history('GET')
 
     def do_POST(self):
-        self.handle_request('POST')
+        self.process_history('POST')
 
     def do_DELETE(self):
-        self.handle_request('DELETE')
+        self.process_history('DELETE')
