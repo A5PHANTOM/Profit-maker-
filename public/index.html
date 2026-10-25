@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="calculator.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="history.js" defer></script>
 </head>
 <body>
   <header><a class="brand" href="./"><span class="brand-icon">↗</span> Price & Profit</a><span class="header-note">A little clarity for every sale.</span></header>
@@ -43,6 +44,12 @@
         <p class="result-note" id="result-note">Your next sale, with the numbers figured out.</p>
       </div>
       <p class="footnote">Same currency in, same currency out. Profit is the added amount, before fees and taxes.</p>
+      <section class="history-panel" aria-labelledby="history-title">
+        <div class="history-heading"><h2 id="history-title">Your history</h2><div><button type="button" id="refresh-history">Refresh</button><button type="button" id="clear-history">Clear</button></div></div>
+        <p class="history-note">Latest 100 calculations for this browser. Telegram history is available through /history.</p>
+        <p id="history-status" role="status">Loading history…</p>
+        <ol id="history-list"></ol>
+      </section>
     </section>
   </main>
   <aside class="install-tip" id="install-tip" hidden><span><strong>Keep it on your iPhone</strong><br>Tap Safari’s Share button, then Add to Home Screen.</span><button type="button" id="dismiss-install" aria-label="Dismiss installation tip">×</button></aside>

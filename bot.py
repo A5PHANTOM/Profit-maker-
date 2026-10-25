@@ -17,7 +17,7 @@ def load_env():
     if path.is_file():
         for line in path.read_text().splitlines():
             key, separator, value = line.partition("=")
-            if separator and key.strip() in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET"):
+            if separator and key.strip() in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"):
                 os.environ.setdefault(key.strip(), value.strip())
 
 
@@ -48,8 +48,9 @@ def calculate(price, percent):
 
 
 class CalculatorBot:
-    def __init__(self, api):
+    def __init__(self, api, persist=False):
         self.api = api
+        self.persist = persist
         self.prices = {}
 
     def handle(self, update):
@@ -65,9 +66,12 @@ class CalculatorBot:
         text = message.get("text", "").strip()
         command = text.split("@", 1)[0].lower()
         reply = {"chat_id": chat_id}
-        if command in ("/start", "/help", "/cancel") or text.lower() == "new price":
+        if command == '/history':
+            from history_store import telegram_history
+            reply['text'] = telegram_history(chat_id)
+        elif command in ("/start", "/help", "/cancel") or text.lower() == "new price":
             self.prices.pop(chat_id, None)
-            reply.update(text="Send the original price (for example 1000). Then choose 30%, 40%, 50%, or Other %.\n\nI add the percentage to your original price. Profit is the added amount, before any other costs.", reply_markup=REMOVE_KEYBOARD)
+            reply.update(text="Send the original price (for example 1000). Then choose 30%, 40%, 50%, or Other %.\n\nI add the percentage to your original price. Profit is the added amount, before any other costs. View saved calculations with /history.", reply_markup=REMOVE_KEYBOARD)
         elif chat_id not in self.prices:
             try:
                 price = number(text)
@@ -83,6 +87,14 @@ class CalculatorBot:
                 price = self.prices[chat_id]
                 total, profit = calculate(price, percent)
                 reply.update(text=f"Original price: {price:,.2f}\nPercentage added: {percent.normalize():f}%\nNew price: {total:,.2f}\nProfit: {profit:,.2f}\n\nChoose another percentage to compare, or tap New price.", reply_markup=KEYBOARD)
+                if self.persist:
+                    from history_store import save, HistoryUnavailable
+                    try:
+                        save('telegram:' + str(chat_id), price, percent, total, profit,
+                             'update-' + str(update['update_id']))
+                        reply['text'] += '\nSaved. View /history'
+                    except HistoryUnavailable:
+                        reply['text'] += '\nHistory unavailable; this calculation was not saved.'
             except ValueError as error:
                 reply.update(text=f"{error}\nChoose a percentage or tap New price.", reply_markup=KEYBOARD)
         self.api("sendMessage", **reply)
@@ -121,7 +133,7 @@ def main():
         raise SystemExit("Set TELEGRAM_BOT_TOKEN to the token from @BotFather, then run python3 bot.py.")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     api = telegram_api(token)
-    bot = CalculatorBot(api)
+    bot = CalculatorBot(api, persist=True)
     offset = 0
     try:
         identity = api("getMe")

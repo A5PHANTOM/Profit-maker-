@@ -1,5 +1,24 @@
 # Telegram price and profit bot
 
+## Database and history
+
+History uses an Upstash Redis database over HTTPS, compatible with Vercel Functions. Create/connect an Upstash Redis database through Vercel Marketplace or the Upstash console, then add these server-only variables to Vercel and your local `.env`:
+
+```text
+UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-rest-token
+```
+
+Use the REST token with write access. Redeploy after adding the variables. No schema migration or packages are required. Database requests use the [Upstash REST API](https://upstash.com/docs/redis/features/restapi).
+
+The website saves when you tap **Calculate**, or choose a preset after calculating. View **Your history** below the result, **Refresh** it, or **Clear** it. Typing updates the preview; tap Calculate to save that preview. Offline calculations still work; offline entries are not queued or saved. Failed saves display an explicit message. History is not cached by the service worker.
+
+Web history is private to a random browser key stored on your device. There is no account sign-in or cross-device sync: clearing browser data loses access to that history. Safari and the installed app may have separate storage. Treat the browser key as a credential. Telegram history is separate and scoped to the Telegram private chat: send **/history** to see your latest 10 calculations. Both webhook and local polling save to the same Telegram history.
+
+The database retains the latest **100 calculations per browser/chat**, with amounts, percentage and UTC timestamp. Server-side code recalculates submitted values. Repeated delivery of an event is deduplicated for 7 days. The database must be configured for saving to work; calculations remain available when it is not.
+
+For full local API development use `vercel dev`; the simple static HTTP server can preview the calculator but cannot provide database endpoints. Run `python3 -m unittest -v`, `node test_web.cjs`, and `node test_offline.cjs` for checks.
+
 ## Web version — deploy on Vercel
 
 ### iPhone app
@@ -8,9 +27,9 @@ The website is an installable web app, with a compact iPhone layout, decimal key
 
 After deploying, open the HTTPS Vercel URL in **Safari**, tap **Share → Add to Home Screen**, keep **Open as Web App** enabled if shown, and tap **Add**. Launch it from the new icon for the standalone app experience. Wait for **Ready to use offline** on the first visit before trying airplane mode. Browser storage eviction or clearing site data can remove offline availability.
 
-Calculation data stays on the device and resets when the page reloads. No account is required. Fonts are built in, so there are no external font requests. To release app changes, update the cache version in `public/sw.js`; close all app windows and reopen after the update has downloaded to activate the new version. Icon source: `scripts/make_icons.py`.
+The current form resets when the page reloads; saved history remains in the database. No account is required. Fonts are built in, so there are no external font requests. To release app changes, update the cache version in `public/sw.js`; close all app windows and reopen after the update has downloaded to activate the new version. Icon source: `scripts/make_icons.py`.
 
-The responsive browser calculator is in `public/`. It includes 30%, 40%, 50%, custom percentages, live updates after your first calculation, and a reset button. No backend, dependencies, environment variables, or Telegram token are needed for the website.
+The responsive browser calculator is in `public/`. It includes 30%, 40%, 50%, custom percentages, live updates after your first calculation, and a reset button. Basic calculations need no backend or Telegram token. Saving and viewing history requires the database environment variables above and `/api/history` on Vercel.
 
 1. Push this folder to a GitHub repository.
 2. In Vercel, choose **Add New → Project**, then import that repository.
@@ -21,7 +40,7 @@ To preview locally, run `python3 -m http.server 8000 --directory public` and vis
 
 ### Telegram bot on Vercel
 
-The repository also includes `/api/telegram`, a Python webhook that runs on Vercel. It keeps the original price inside Telegram buttons and custom-percentage reply prompts, so it needs no database and survives server restarts.
+The repository also includes `/api/telegram`, a Python webhook that runs on Vercel. It keeps the original price inside Telegram buttons and custom-percentage reply prompts, so the active conversation survives server restarts. History uses the database configured above.
 
 1. In Vercel Project Settings → Environment Variables, add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` from your local `.env`. Select Production (and Preview if required), then deploy/redeploy. The ignored `.env` is never pushed to GitHub or uploaded automatically.
 2. Ensure the production URL is publicly reachable by Telegram (no Vercel login protection).
@@ -43,7 +62,7 @@ Python 3.10+; no packages to install.
    python3 bot.py
    ```
 
-   This prompt works in macOS's default zsh. The token stays hidden while you paste. Keep it private. The bot reads the environment variable, not a `.env` file.
+   This prompt works in macOS's default zsh. The token stays hidden while you paste. Keep it private. Alternatively, save the token in the ignored `.env` file; the bot loads it automatically. Environment variables take precedence.
 
 3. Open your bot in Telegram and tap **Start**. Send a price, then tap **30%**, **40%**, **50%**, or **Other %**. You can also type a percentage directly.
 

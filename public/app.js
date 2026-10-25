@@ -5,6 +5,13 @@ const presets = [...document.querySelectorAll('.preset')];
 let selection = '40';
 let hasResult = false;
 
+function saveCalculation() {
+  window.dispatchEvent(new CustomEvent('calculation-save', { detail: {
+    price: $('price').value,
+    percentage: selection === 'custom' ? $('percentage').value : selection
+  } }));
+}
+
 function clearResults() {
   for (const id of ['total', 'original', 'profit']) $(id).textContent = '—';
   $('result-note').textContent = 'Your next sale, with the numbers figured out.';
@@ -37,7 +44,8 @@ presets.forEach(button => button.addEventListener('click', () => {
     item.setAttribute('aria-pressed', String(item === button));
   });
   $('custom-field').hidden = selection !== 'custom';
-  render();
+  const valid = render();
+  if (valid && hasResult && selection !== 'custom') saveCalculation();
   if (selection === 'custom') $('percentage').focus();
 }));
 form.addEventListener('submit', event => {
@@ -47,6 +55,7 @@ form.addEventListener('submit', event => {
     if ($('price-error').textContent) $('price').focus();
     else $('percentage').focus();
   } else {
+    saveCalculation();
     document.activeElement.blur();
     if (matchMedia('(max-width: 800px)').matches) {
       document.querySelector('.results').scrollIntoView({ block: 'nearest', behavior: 'auto' });

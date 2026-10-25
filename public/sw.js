@@ -1,7 +1,7 @@
 'use strict';
 // Bump the version when changing any file in the offline app shell.
-const CACHE = 'price-profit-v1';
-const ASSETS = ['/', '/index.html', '/style.css', '/calculator.js', '/app.js',
+const CACHE = 'price-profit-v2';
+const ASSETS = ['/', '/index.html', '/style.css', '/calculator.js', '/app.js', '/history.js',
   '/manifest.webmanifest', '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));

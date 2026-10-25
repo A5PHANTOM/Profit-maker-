@@ -6,6 +6,7 @@ import re
 from http.server import BaseHTTPRequestHandler
 
 from bot import calculate, number
+from history_store import save, telegram_history, HistoryUnavailable
 
 
 def buttons(price):
@@ -16,7 +17,7 @@ def buttons(price):
         {"text": "New price", "callback_data": "new"}]]}
 
 
-def response_for(update, bot_id):
+def response_for(update, bot_id, persist=False):
     callback = update.get("callback_query")
     message = (callback or {}).get("message") if callback else update.get("message")
     if not message or message.get("chat", {}).get("type") != "private":
@@ -26,6 +27,9 @@ def response_for(update, bot_id):
         return None
     result = {"method": "sendMessage", "chat_id": chat_id}
     text = message.get("text", "").strip()
+    if not callback and text.split('@', 1)[0].lower() == '/history':
+        result['text'] = telegram_history(chat_id)
+        return result
     try:
         if callback:
             data = callback.get("data", "")
@@ -44,7 +48,7 @@ def response_for(update, bot_id):
                 return None
             percent = number(parts[2], percentage=True)
         elif text.split("@", 1)[0].lower() in ("/start", "/help", "/cancel"):
-            result["text"] = "Send your original price, then choose 30%, 40%, 50%, or Other %. Profit is the amount added, before fees and taxes."
+            result["text"] = "Send your original price, then choose 30%, 40%, 50%, or Other %. Profit is the amount added, before fees and taxes. View saved calculations with /history."
             return result
         else:
             parent = message.get("reply_to_message", {})
@@ -62,6 +66,13 @@ def response_for(update, bot_id):
                 return result
         total, profit = calculate(price, percent)
         result.update(text=f"Original price: {price:,.2f}\nPercentage added: {percent.normalize():f}%\nNew price: {total:,.2f}\nProfit: {profit:,.2f}", reply_markup=buttons(price))
+        if persist:
+            try:
+                save('telegram:' + str(chat_id), price, percent, total, profit,
+                     'update-' + str(update['update_id']))
+                result['text'] += '\n\nSaved. View /history'
+            except HistoryUnavailable:
+                result['text'] += '\n\nHistory unavailable; this calculation was not saved.'
     except (ValueError, IndexError):
         result["text"] = "Enter a valid price, for example 1000. For a custom percentage, reply directly to the percentage prompt."
     return result
@@ -91,7 +102,7 @@ class handler(BaseHTTPRequestHandler):
             update = json.loads(self.rfile.read(size))
             if not isinstance(update, dict):
                 raise ValueError()
-            reply = response_for(update, token.split(":", 1)[0])
+            reply = response_for(update, token.split(":", 1)[0], persist=True)
         except (ValueError, TypeError, KeyError, AttributeError):
             return self.respond(400, {"error": "Invalid update"})
         self.respond(200, reply or {"ok": True})
